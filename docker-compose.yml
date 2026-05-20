@@ -19,7 +19,7 @@ services:
       retries: 5
 
   app:
-    build: .
+    image: ghcr.io/valdi-at/kewirausahaan-berbasis-teknologi-28-ritsu:master
     container_name: ritsu-app
     restart: unless-stopped
     ports:
