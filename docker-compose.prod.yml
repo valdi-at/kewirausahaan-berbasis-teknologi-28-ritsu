@@ -1,0 +1,21 @@
+services:
+  postgres:
+    networks:
+      - yggdrasil
+
+  app:
+    ports: !reset []
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ritsu-app.rule=Host(`ritsu.shinyshoe.net`)"
+      - "traefik.http.routers.ritsu-app.entrypoints=websecure"
+      - "traefik.http.routers.ritsu-app.service=ritsu-app"
+      - "traefik.http.routers.ritsu-app.tls=true"
+      - "traefik.http.services.ritsu-app.loadbalancer.server.port=3000"
+    networks:
+      - yggdrasil
+
+networks:
+  yggdrasil:
+    name: yggdrasil-heimdall
+    external: true
