@@ -1,36 +1,146 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RITSU - Rute ITS Utama
+
+Campus transportation app for ITS (Institut Teknologi Sepuluh Nopember). Book a driver, track your route, and arrive on time.
+
+Built with **Next.js 16**, **DaisyUI 5**, **PostgreSQL**, and **JWT sessions**.
+
+---
+
+## Tech Stack
+
+| Layer      | Technology                         |
+| ---------- | ---------------------------------- |
+| Framework  | Next.js 16 (App Router, Turbopack) |
+| UI         | Tailwind CSS v4 + DaisyUI v5       |
+| Language   | TypeScript                         |
+| Database   | PostgreSQL 17                      |
+| Auth       | JWT via `jose` + `bcryptjs`        |
+| Validation | Zod v4                             |
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- [Node.js](https://nodejs.org/) v22+
+- [Docker](https://www.docker.com/) (for the database)
+
+### 1. Clone and install
+
+```sh
+git clone <repo-url>
+cd ruta-its
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```sh
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Edit `.env` and set:
 
-## Learn More
+- `POSTGRES_PASSWORD`: any password you want
+- `DATABASE_URL`: update the password to match (used for `npm run dev` only)
+- `SESSION_SECRET`: generate with `openssl rand -base64 32`
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Start the database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sh
+docker compose up -d postgres
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The migration in `migrations/001_create_users.sql` runs automatically on first start.
 
-## Deploy on Vercel
+### 4. Run the dev server
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```sh
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open <http://localhost:3000> - you'll land on `/auth/login`.
+
+---
+
+## Running with Docker (full stack)
+
+Builds and starts both the app and the database:
+
+```sh
+docker compose up -d            # start da server
+```
+
+| URL                     | Service    |
+| ----------------------- | ---------- |
+| <http://localhost:3000> | App        |
+| localhost:5432          | PostgreSQL |
+
+```sh
+docker compose logs -f app      # app logs
+docker compose down             # stop everything
+docker compose down -v          # stop + wipe database
+```
+
+---
+
+## Project Structure
+
+```text
+app/
+├── (main)/              # Authenticated pages (navbar layout)
+│   ├── home/            # /home (landing page)
+│   └── profile/         # /profile (user profile + driver apply)
+├── auth/
+│   ├── login/           # /auth/login
+│   ├── register/        # /auth/register
+│   └── logout/          # /auth/logout
+├── actions/
+│   └── auth.ts          # Server actions: signup, login, logout
+├── components/
+│   └── Navbar.tsx       # Top nav (desktop) + dock (mobile)
+└── lib/
+    ├── db.ts            # PostgreSQL pool
+    ├── session.ts       # JWT encrypt/decrypt
+    ├── dal.ts           # Data access layer (verifySession, getUser)
+    └── definitions.ts   # Zod schemas + types
+
+migrations/
+└── 001_create_users.sql
+
+proxy.ts                 # Route protection (Next.js 16 middleware)
+```
+
+---
+
+## Pages
+
+| Route            | Description                           | Auth required |
+| ---------------- | ------------------------------------- | ------------- |
+| `/`              | Redirects to `/home`                  | -             |
+| `/home`          | App landing page                      | ✅             |
+| `/profile`       | User info, driver application, logout | ✅             |
+| `/auth/login`    | Sign in                               | -             |
+| `/auth/register` | Create account                        | -             |
+| `/auth/logout`   | Clears session, redirects to login    | ✅             |
+
+---
+
+## Environment Variables
+
+See [`.env.example`](.env.example) for the full list.
+
+| Variable            | Used by                 | Description                        |
+| ------------------- | ----------------------- | ---------------------------------- |
+| `POSTGRES_USER`     | Docker Compose          | DB username                        |
+| `POSTGRES_PASSWORD` | Docker Compose          | DB password                        |
+| `POSTGRES_DB`       | Docker Compose          | DB name                            |
+| `POSTGRES_PORT`     | Docker Compose          | Host-side port                     |
+| `DATABASE_URL`      | Next.js (`npm run dev`) | Full connection string (localhost) |
+| `SESSION_SECRET`    | Next.js                 | JWT signing secret                 |
+
+:::info
+In Docker, `DATABASE_URL` is constructed automatically from `POSTGRES_*` variables, you don't need to set it separately.
+
+:::
