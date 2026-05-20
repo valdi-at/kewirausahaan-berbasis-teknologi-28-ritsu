@@ -3,6 +3,8 @@ services:
     image: postgres:17-alpine
     container_name: ritsu-db
     restart: unless-stopped
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -17,7 +19,7 @@ services:
       retries: 5
 
   app:
-    image: ghcr.io/valdi-at/kewirausahaan-berbasis-teknologi-28-ritsu:master
+    build: .
     container_name: ritsu-app
     restart: unless-stopped
     ports:
@@ -25,6 +27,21 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       SESSION_SECRET: ${SESSION_SECRET}
+    volumes:
+      - ritsu_uploads:/app/public/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: ritsu-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "5050:80"
     depends_on:
       postgres:
         condition: service_healthy
