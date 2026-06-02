@@ -51,14 +51,12 @@ export default function RegisterForm() {
           required
           className={`input w-full ${state?.errors?.password ? 'input-error' : ''}`}
         />
-        {state?.errors?.password ? (
+        {state?.errors?.password && (
           <ul className="fieldset-label text-error space-y-0.5">
             {state.errors.password.map((err) => (
               <li key={err}>{err}</li>
             ))}
           </ul>
-        ) : (
-          <p className="fieldset-label">At least 8 characters with a letter and number.</p>
         )}
       </fieldset>
 
