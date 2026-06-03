@@ -78,7 +78,7 @@ export default async function ProfilePage() {
               Earn income by giving rides around campus. Upload a photo of your driving license to apply.
             </p>
             <div className="card-actions">
-              <Link href="/profile/apply-driver" className="btn btn-primary btn-sm">
+              <Link href="/driver/application" className="btn btn-primary btn-sm">
                 Apply Now
               </Link>
             </div>

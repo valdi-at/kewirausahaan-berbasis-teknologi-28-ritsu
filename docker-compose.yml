@@ -48,3 +48,4 @@ services:
 
 volumes:
   ritsu_pgdata:
+  ritsu_uploads:
