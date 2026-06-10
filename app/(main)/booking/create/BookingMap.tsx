@@ -3,23 +3,14 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect, useRef, useState } from 'react'
 import { createBooking } from '@/app/actions/booking'
+import { getRoute, haversineKm, type RouteResult } from '@/app/lib/routing'
 
 const ITS_CENTER: [number, number] = [-7.2756, 112.7985]
-const BASE_PRICE    = 5000
-const PRICE_PER_KM  = 3000
+const FLAT_PRICE = 10000
 
 type PaymentMethod = { id: string; name: string }
 type Location      = { lat: number; lng: number; name: string }
 type Step          = 'pickup' | 'destination' | 'review'
-
-function haversineKm(a: Location, b: Location) {
-  const R    = 6371
-  const dLat = (b.lat - a.lat) * Math.PI / 180
-  const dLng = (b.lng - a.lng) * Math.PI / 180
-  const h    = Math.sin(dLat / 2) ** 2 +
-    Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
-}
 
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
@@ -53,6 +44,7 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
   const pickupMarkerRef = useRef<L.Marker | null>(null)
   const destMarkerRef   = useRef<L.Marker | null>(null)
   const polylineRef     = useRef<L.Polyline | null>(null)
+  const routeLineRef    = useRef<L.Polyline | null>(null)
   const pickupRef       = useRef<Location | null>(null)   // avoids stale closure in click handler
 
   const [step,            setStep]            = useState<Step>('pickup')
@@ -62,6 +54,8 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
   const [geocoding,       setGeocoding]       = useState(false)
   const [error,           setError]           = useState<string | null>(null)
   const [submitting,      setSubmitting]      = useState(false)
+  const [route,           setRoute]           = useState<RouteResult | null>(null)
+  const [routing,         setRouting]         = useState(false)
 
   // ── Init map ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -118,13 +112,42 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
     return () => { map.off('click', onMapClick) }
   }, [step])
 
+  // ── Fetch the road route once both points are set ────────────────────────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !pickup || !destination) {
+      setRoute(null)
+      return
+    }
+
+    let cancelled = false
+    setRouting(true)
+
+    getRoute(pickup, destination).then(result => {
+      if (cancelled) return
+      setRouting(false)
+      setRoute(result)
+      if (!result) return
+
+      polylineRef.current?.remove();  polylineRef.current  = null
+      routeLineRef.current?.remove()
+      routeLineRef.current = L.polyline(result.coordinates, {
+        color: '#0891b2', weight: 4,
+      }).addTo(map)
+      map.fitBounds(routeLineRef.current.getBounds(), { padding: [60, 60] })
+    })
+
+    return () => { cancelled = true }
+  }, [pickup, destination])
+
   // ── Reset ─────────────────────────────────────────────────────────────────
   const reset = () => {
     pickupMarkerRef.current?.remove();  pickupMarkerRef.current  = null
     destMarkerRef.current?.remove();    destMarkerRef.current    = null
     polylineRef.current?.remove();      polylineRef.current      = null
+    routeLineRef.current?.remove();     routeLineRef.current     = null
     pickupRef.current = null
-    setPickup(null); setDestination(null); setStep('pickup'); setError(null)
+    setPickup(null); setDestination(null); setStep('pickup'); setError(null); setRoute(null)
     mapRef.current?.setView(ITS_CENTER, 16)
   }
 
@@ -133,8 +156,8 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
     if (!pickup || !destination) return
     setSubmitting(true)
     setError(null)
-    const distance = haversineKm(pickup, destination)
-    const price    = Math.round(BASE_PRICE + distance * PRICE_PER_KM)
+    const distance = route?.distanceKm ?? haversineKm(pickup, destination)
+    const price    = FLAT_PRICE
     const result   = await createBooking({
       pickupLocation: JSON.stringify(pickup),
       destination:    JSON.stringify(destination),
@@ -146,8 +169,8 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
     // on success, createBooking redirects — setSubmitting never gets called
   }
 
-  const distance = pickup && destination ? haversineKm(pickup, destination) : 0
-  const price    = Math.round(BASE_PRICE + distance * PRICE_PER_KM)
+  const distance = pickup && destination ? (route?.distanceKm ?? haversineKm(pickup, destination)) : 0
+  const price    = FLAT_PRICE
 
   return (
     <div className="relative h-[calc(100dvh-6rem)] md:h-[calc(100dvh-5rem)] overflow-hidden">
@@ -218,13 +241,23 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
               <div className="flex gap-3 text-sm">
                 <div className="flex-1 bg-base-200 rounded-xl px-3 py-2 text-center">
                   <p className="text-xs text-base-content/50">Distance</p>
-                  <p className="font-semibold">{distance.toFixed(1)} km</p>
+                  <p className="font-semibold">
+                    {routing
+                      ? <span className="loading loading-spinner loading-xs" />
+                      : `${distance.toFixed(1)} km`}
+                  </p>
                 </div>
                 <div className="flex-1 bg-base-200 rounded-xl px-3 py-2 text-center">
                   <p className="text-xs text-base-content/50">Est. Price</p>
                   <p className="font-semibold">Rp {price.toLocaleString('id-ID')}</p>
                 </div>
               </div>
+
+              {!routing && !route && (
+                <p className="text-xs text-base-content/40 -mt-2">
+                  Route unavailable — showing straight-line distance.
+                </p>
+              )}
 
               <div className="flex items-center gap-3">
                 <label className="text-sm font-medium shrink-0">Payment</label>

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { getUser } from '@/app/lib/dal'
 import { db } from '@/app/lib/db'
 import StageButton from './StageButton'
+import LocationBeacon from './LocationBeacon'
 import { startTrip, completeTrip, markPaid } from '@/app/actions/booking'
 
 export const metadata: Metadata = { title: 'Ride - RITSU' }
@@ -75,6 +76,8 @@ export default async function DriverBookingDetailPage({
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8 flex flex-col gap-4">
+
+      {(booking.stage === 3 || booking.stage === 4) && <LocationBeacon />}
 
       {/* Header */}
       <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import { getUser } from '@/app/lib/dal'
 import { db } from '@/app/lib/db'
 import ConfirmDriverButton from './ConfirmDriverButton'
 import AutoRefresh from './AutoRefresh'
+import LiveMapClient from './LiveMapClient'
 
 export const metadata: Metadata = { title: 'Booking - RITSU' }
 
@@ -38,6 +39,20 @@ function locationName(raw: string): string {
   }
 }
 
+type Point = { lat: number; lng: number; name: string }
+
+function locationPoint(raw: string): Point | null {
+  try {
+    const p = JSON.parse(raw)
+    if (Number.isFinite(p.lat) && Number.isFinite(p.lng)) {
+      return { lat: Number(p.lat), lng: Number(p.lng), name: p.name ?? '' }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 export default async function BookingDetailPage({
   params,
 }: {
@@ -66,6 +81,10 @@ export default async function BookingDetailPage({
   const from    = locationName(booking.pickup_location)
   const to      = locationName(booking.destination)
   const stage   = STAGE_INFO[booking.stage] ?? { label: `Stage ${booking.stage}`, cls: 'badge-ghost', desc: '' }
+
+  const pickupPoint = locationPoint(booking.pickup_location)
+  const destPoint   = locationPoint(booking.destination)
+  const showLiveMap = (booking.stage === 3 || booking.stage === 4) && pickupPoint && destPoint
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8 flex flex-col gap-4">
@@ -133,6 +152,16 @@ export default async function BookingDetailPage({
           )}
         </div>
       </div>
+
+      {/* Live Tracking */}
+      {showLiveMap && pickupPoint && destPoint && (
+        <div className="card bg-base-100 shadow-sm">
+          <div className="card-body gap-3 py-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-base-content/40">Live Tracking</h2>
+            <LiveMapClient bookingId={booking.id} pickup={pickupPoint} destination={destPoint} />
+          </div>
+        </div>
+      )}
 
       {/* Route */}
       <div className="card bg-base-100 shadow-sm">
