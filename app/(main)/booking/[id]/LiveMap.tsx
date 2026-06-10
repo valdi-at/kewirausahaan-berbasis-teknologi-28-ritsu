@@ -3,6 +3,7 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect, useRef, useState } from 'react'
 import { getRoute } from '@/app/lib/routing'
+import { ITS_GEOFENCE } from '@/app/lib/geofence'
 
 type Point = { lat: number; lng: number; name: string }
 
@@ -48,6 +49,10 @@ export default function LiveMap({
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map)
     L.control.zoom({ position: 'topright' }).addTo(map)
+
+    L.polygon(ITS_GEOFENCE, {
+      color: '#16a34a', weight: 2, dashArray: '6 6', fillOpacity: 0.05,
+    }).addTo(map)
 
     L.marker([pickup.lat, pickup.lng], { icon: pinIcon('P', '#0891b2') }).addTo(map)
     L.marker([destination.lat, destination.lng], { icon: pinIcon('D', '#ca8a04') }).addTo(map)

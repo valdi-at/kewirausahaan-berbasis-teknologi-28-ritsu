@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/app/lib/db'
 import { verifySession } from '@/app/lib/dal'
+import { isInsideGeofence } from '@/app/lib/geofence'
 
 // ── Driver: claim a stage-1 booking ──────────────────────────────────────────
 
@@ -54,6 +55,12 @@ export async function createBooking(
   )
   if (userResult.rows[0]?.role !== 'customer') {
     return { error: 'Only customers can create bookings.' }
+  }
+
+  const pickup = JSON.parse(input.pickupLocation)
+  const dest   = JSON.parse(input.destination)
+  if (!isInsideGeofence(pickup) && !isInsideGeofence(dest)) {
+    return { error: 'At least one of the pickup or destination points must be inside the ITS campus area.' }
   }
 
   const result = await db.query<{ id: string }>(

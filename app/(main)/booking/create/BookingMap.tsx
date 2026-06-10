@@ -4,9 +4,10 @@ import L from 'leaflet'
 import { useEffect, useRef, useState } from 'react'
 import { createBooking } from '@/app/actions/booking'
 import { getRoute, haversineKm, type RouteResult } from '@/app/lib/routing'
+import { ITS_CENTER, ITS_GEOFENCE, isInsideGeofence } from '@/app/lib/geofence'
 
-const ITS_CENTER: [number, number] = [-7.2756, 112.7985]
-const FLAT_PRICE = 10000
+const FLAT_PRICE      = 10000
+const PRICE_PER_KM    = 5000
 
 type PaymentMethod = { id: string; name: string }
 type Location      = { lat: number; lng: number; name: string }
@@ -69,6 +70,11 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map)
     L.control.zoom({ position: 'topright' }).addTo(map)
+
+    L.polygon(ITS_GEOFENCE, {
+      color: '#16a34a', weight: 2, dashArray: '6 6', fillOpacity: 0.05,
+    }).addTo(map)
+
     mapRef.current = map
     return () => { map.remove(); mapRef.current = null }
   }, [])
@@ -151,14 +157,20 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
     mapRef.current?.setView(ITS_CENTER, 16)
   }
 
+  // ── Pricing ───────────────────────────────────────────────────────────────
+  const pickupInside = pickup      ? isInsideGeofence(pickup)      : false
+  const destInside   = destination ? isInsideGeofence(destination) : false
+  const bothOutside  = !!pickup && !!destination && !pickupInside && !destInside
+
+  const distance = pickup && destination ? (route?.distanceKm ?? haversineKm(pickup, destination)) : 0
+  const price    = (pickupInside && destInside) ? FLAT_PRICE : Math.round(distance * PRICE_PER_KM)
+
   // ── Book ──────────────────────────────────────────────────────────────────
   const handleBook = async () => {
-    if (!pickup || !destination) return
+    if (!pickup || !destination || bothOutside) return
     setSubmitting(true)
     setError(null)
-    const distance = route?.distanceKm ?? haversineKm(pickup, destination)
-    const price    = FLAT_PRICE
-    const result   = await createBooking({
+    const result = await createBooking({
       pickupLocation: JSON.stringify(pickup),
       destination:    JSON.stringify(destination),
       price,
@@ -168,9 +180,6 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
     if (result?.error) { setError(result.error); setSubmitting(false) }
     // on success, createBooking redirects — setSubmitting never gets called
   }
-
-  const distance = pickup && destination ? (route?.distanceKm ?? haversineKm(pickup, destination)) : 0
-  const price    = FLAT_PRICE
 
   return (
     <div className="relative h-[calc(100dvh-6rem)] md:h-[calc(100dvh-5rem)] overflow-hidden">
@@ -259,6 +268,18 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
                 </p>
               )}
 
+              {!bothOutside && !(pickupInside && destInside) && (
+                <p className="text-xs text-base-content/40 -mt-2">
+                  One point is outside the ITS campus area — priced at Rp {PRICE_PER_KM.toLocaleString('id-ID')}/km.
+                </p>
+              )}
+
+              {bothOutside && (
+                <p className="text-xs text-error -mt-2">
+                  At least one of the pickup or destination points must be inside the ITS campus area.
+                </p>
+              )}
+
               <div className="flex items-center gap-3">
                 <label className="text-sm font-medium shrink-0">Payment</label>
                 <select
@@ -280,7 +301,7 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
                 </button>
                 <button
                   onClick={handleBook}
-                  disabled={submitting}
+                  disabled={submitting || bothOutside}
                   className="btn btn-primary flex-1"
                 >
                   {submitting
