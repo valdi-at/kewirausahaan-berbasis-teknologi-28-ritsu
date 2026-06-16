@@ -37,7 +37,8 @@ export async function signup(state: FormState, formData: FormData): Promise<Form
     const user = result.rows[0]
     userId = user.id
     role = user.role
-  } catch {
+  } catch (e) {
+    console.error('[signup] DB error:', e)
     return { message: 'Something went wrong. Please try again.' }
   }
 
@@ -77,7 +78,8 @@ export async function login(state: FormState, formData: FormData): Promise<FormS
 
     userId = user.id
     role = user.role
-  } catch {
+  } catch (e) {
+    console.error('[login] DB error:', e)
     return { message: 'Something went wrong. Please try again.' }
   }
 
