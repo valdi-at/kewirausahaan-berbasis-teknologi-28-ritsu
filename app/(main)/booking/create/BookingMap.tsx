@@ -79,6 +79,20 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
     return () => { map.remove(); mapRef.current = null }
   }, [])
 
+  // ── Drag handler factory: re-geocode and update state on marker drag ────
+  const onMarkerDragEnd = (
+    setLocation: (loc: Location) => void,
+    ref?: React.MutableRefObject<Location | null>
+  ) => async (e: L.DragEndEvent) => {
+    const { lat, lng } = (e.target as L.Marker).getLatLng()
+    setGeocoding(true)
+    const name = await reverseGeocode(lat, lng)
+    setGeocoding(false)
+    const loc: Location = { lat, lng, name }
+    if (ref) ref.current = loc
+    setLocation(loc)
+  }
+
   // ── Click handler (re-registers when step changes) ───────────────────────
   useEffect(() => {
     const map = mapRef.current
@@ -93,22 +107,18 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
 
       if (step === 'pickup') {
         pickupMarkerRef.current?.remove()
-        pickupMarkerRef.current = L.marker([lat, lng], { icon: pinIcon('P', '#0891b2') }).addTo(map)
+        pickupMarkerRef.current = L.marker([lat, lng], { icon: pinIcon('P', '#0891b2'), draggable: true })
+          .addTo(map)
+          .on('dragend', onMarkerDragEnd(setPickup, pickupRef))
         pickupRef.current = loc
         setPickup(loc)
         setStep('destination')
       } else {
         destMarkerRef.current?.remove()
-        polylineRef.current?.remove()
-        destMarkerRef.current = L.marker([lat, lng], { icon: pinIcon('D', '#ca8a04') }).addTo(map)
+        destMarkerRef.current = L.marker([lat, lng], { icon: pinIcon('D', '#ca8a04'), draggable: true })
+          .addTo(map)
+          .on('dragend', onMarkerDragEnd(setDestination))
 
-        const p = pickupRef.current
-        if (p) {
-          polylineRef.current = L.polyline([[p.lat, p.lng], [lat, lng]], {
-            color: '#0891b2', weight: 3, dashArray: '8 6',
-          }).addTo(map)
-          map.fitBounds([[p.lat, p.lng], [lat, lng]], { padding: [60, 60] })
-        }
         setDestination(loc)
         setStep('review')
       }
@@ -126,6 +136,14 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
       return
     }
 
+    // Immediate straight-line preview while the road route loads
+    polylineRef.current?.remove()
+    routeLineRef.current?.remove(); routeLineRef.current = null
+    polylineRef.current = L.polyline([[pickup.lat, pickup.lng], [destination.lat, destination.lng]], {
+      color: '#0891b2', weight: 3, dashArray: '8 6',
+    }).addTo(map)
+    map.fitBounds(polylineRef.current.getBounds(), { padding: [60, 60] })
+
     let cancelled = false
     setRouting(true)
 
@@ -136,7 +154,6 @@ export default function BookingMap({ paymentMethods }: { paymentMethods: Payment
       if (!result) return
 
       polylineRef.current?.remove();  polylineRef.current  = null
-      routeLineRef.current?.remove()
       routeLineRef.current = L.polyline(result.coordinates, {
         color: '#0891b2', weight: 4,
       }).addTo(map)
