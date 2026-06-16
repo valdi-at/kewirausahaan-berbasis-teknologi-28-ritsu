@@ -1,0 +1,5 @@
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS content_type VARCHAR(20) NOT NULL DEFAULT 'text',
+  ADD COLUMN IF NOT EXISTS media_url TEXT;
+
+ALTER TABLE chat_messages ALTER COLUMN content DROP NOT NULL;

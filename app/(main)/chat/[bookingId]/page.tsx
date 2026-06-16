@@ -3,21 +3,13 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getUser } from '@/app/lib/dal'
 import { db } from '@/app/lib/db'
-import ChatRoom from './ChatRoom'
+import ChatRoom, { type Message } from './ChatRoom'
 
 export const metadata: Metadata = { title: 'Chat - RITSU' }
 
 type BookingAccess = {
   stage: number
   other_username: string
-}
-
-type Message = {
-  id: string
-  sender_id: string
-  sender_username: string
-  content: string
-  created_at: string
 }
 
 export default async function ChatPage({
@@ -47,7 +39,8 @@ export default async function ChatPage({
   if (!booking) notFound()
 
   const msgResult = await db.query<Message>(
-    `SELECT m.id, m.sender_id, u.username AS sender_username, m.content, m.created_at
+    `SELECT m.id, m.sender_id, u.username AS sender_username,
+            m.content, m.content_type, m.media_url, m.created_at
      FROM chat_messages m
      JOIN users u ON u.id = m.sender_id
      WHERE m.booking_id = $1
@@ -76,7 +69,10 @@ export default async function ChatPage({
             </span>
           </p>
         </div>
-        <Link href={`/booking/${bookingId}`} className="btn btn-ghost btn-xs text-base-content/50">
+        <Link
+          href={user.role === 'driver' ? `/driver/booking/${bookingId}` : `/booking/${bookingId}`}
+          className="btn btn-ghost btn-xs text-base-content/50"
+        >
           View booking
         </Link>
       </div>

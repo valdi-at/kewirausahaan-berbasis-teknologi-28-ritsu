@@ -3,10 +3,21 @@ import path from 'path'
 import fs from 'fs/promises'
 
 const CONTENT_TYPES: Record<string, string> = {
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
+  '.png':  'image/png',
+  '.jpg':  'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
+  '.gif':  'image/gif',
+  '.heic': 'image/heic',
+  '.mp4':  'video/mp4',
+  '.webm': 'video/webm',
+  '.mov':  'video/quicktime',
+  '.mp3':  'audio/mpeg',
+  '.m4a':  'audio/mp4',
+  '.ogg':  'audio/ogg',
+  '.oga':  'audio/ogg',
+  '.wav':  'audio/wav',
+  '.weba': 'audio/webm',
 }
 
 export async function GET(
