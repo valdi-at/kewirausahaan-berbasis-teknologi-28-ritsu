@@ -1,0 +1,28 @@
+'use server'
+import { revalidatePath } from 'next/cache'
+import { db } from '@/app/lib/db'
+import { verifySession } from '@/app/lib/dal'
+
+export async function sendMessage(formData: FormData) {
+  const session = await verifySession()
+  const bookingId = formData.get('bookingId') as string
+  const content   = (formData.get('content') as string)?.trim()
+
+  if (!bookingId || !content) return
+
+  // Verify sender is part of this booking (customer or driver)
+  const access = await db.query<{ id: string }>(
+    `SELECT id FROM bookings
+     WHERE id = $1 AND (customer_id = $2 OR driver_id = $2)`,
+    [bookingId, session.userId]
+  )
+  if (!access.rows[0]) return
+
+  await db.query(
+    `INSERT INTO chat_messages (booking_id, sender_id, content)
+     VALUES ($1, $2, $3)`,
+    [bookingId, session.userId, content]
+  )
+
+  revalidatePath(`/chat/${bookingId}`)
+}

@@ -210,6 +210,15 @@ export default async function BookingDetailPage({
             Pay Now
           </Link>
         )}
+
+        {booking.stage >= 2 && (
+          <Link href={`/chat/${booking.id}`} className="btn btn-ghost btn-block gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" suppressHydrationWarning>
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+            </svg>
+            Chat with Driver
+          </Link>
+        )}
       </div>
 
     </div>
