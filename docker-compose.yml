@@ -16,6 +16,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - internal
 
   migrator:
     image: postgres:17-alpine
@@ -30,6 +32,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - internal
 
   app:
     build: .
@@ -47,6 +51,8 @@ services:
         condition: service_healthy
       migrator:
         condition: service_completed_successfully
+    networks:
+      - internal
 
   pgadmin:
     image: dpage/pgadmin4
@@ -60,7 +66,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - internal
 
 volumes:
   ritsu_pgdata:
   ritsu_uploads:
+
+networks:
+  internal:
+    driver: bridge
