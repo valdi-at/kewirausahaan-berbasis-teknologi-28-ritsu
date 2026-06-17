@@ -3,6 +3,10 @@ services:
     networks:
       - yggdrasil
 
+  migrator:
+    networks:
+      - yggdrasil
+
   app:
     image: ghcr.io/valdi-at/kewirausahaan-berbasis-teknologi-28-ritsu:master
     ports: !reset []
