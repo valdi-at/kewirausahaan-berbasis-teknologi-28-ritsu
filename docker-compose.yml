@@ -11,12 +11,25 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - ritsu_pgdata:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  migrator:
+    image: postgres:17-alpine
+    container_name: ritsu-migrator
+    restart: "no"
+    command: sh /app/scripts/migrate.sh
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    volumes:
+      - ./scripts:/app/scripts
+      - ./migrations:/app/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   app:
     build: .
@@ -32,6 +45,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
 
   pgadmin:
     image: dpage/pgadmin4
