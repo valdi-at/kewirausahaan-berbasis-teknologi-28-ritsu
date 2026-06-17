@@ -39,3 +39,21 @@ export const getUser = cache(async (): Promise<User | null> => {
     return null
   }
 })
+
+// Like getUser but never redirects — returns null for unauthenticated visitors.
+export const getOptionalUser = cache(async (): Promise<User | null> => {
+  try {
+    const cookieStore = await cookies()
+    const cookie = cookieStore.get('session')?.value
+    const session = await decrypt(cookie)
+    if (!session?.userId) return null
+
+    const result = await db.query<User>(
+      'SELECT id, username, email, role, driving_license_image FROM users WHERE id = $1',
+      [session.userId]
+    )
+    return result.rows[0] ?? null
+  } catch {
+    return null
+  }
+})

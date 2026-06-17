@@ -96,6 +96,7 @@ const adminNavItems: NavItem[] = [
 export default function Navbar({ role }: { role: string }) {
   const pathname  = usePathname()
   const navItems  = role === 'admin' ? adminNavItems : userNavItems
+  // guests use the same nav as regular users; protected pages redirect to login on their own
 
   return (
     <>
@@ -132,18 +133,50 @@ export default function Navbar({ role }: { role: string }) {
         <div className="navbar-end" />
       </div>
 
-      {/* ── Mobile: dock (bottom nav) ── */}
-      <div className="dock md:hidden">
-        {navItems.map(({ href, label, icon }) => {
-          const active = pathname.startsWith(href)
-          return (
-            <Link key={href} href={href} className={active ? 'dock-active' : ''}>
-              {icon}
-              <span className="dock-label">{label}</span>
-            </Link>
-          )
-        })}
-      </div>
+      {/* ── Mobile: bottom nav with prominent middle button ── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-base-100/90 backdrop-blur-md border-t border-base-200">
+        <div className="flex items-end">
+          {navItems.map(({ href, label, icon }, i) => {
+            const active   = pathname.startsWith(href)
+            const isMiddle = i === Math.floor(navItems.length / 2)
+
+            if (isMiddle) {
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex-1 flex flex-col items-center gap-1 pb-3 -translate-y-4"
+                >
+                  <span className={`h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-all ${
+                    active
+                      ? 'bg-primary text-primary-content ring-4 ring-primary/20'
+                      : 'bg-primary/80 text-primary-content'
+                  }`}>
+                    {icon}
+                  </span>
+                  <span className={`text-[10px] font-medium ${active ? 'text-primary' : 'text-base-content/50'}`}>
+                    {label}
+                  </span>
+                </Link>
+              )
+            }
+
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`relative flex-1 flex flex-col items-center gap-1 py-3 transition-colors ${
+                  active ? 'text-primary' : 'text-base-content/40'
+                }`}
+              >
+                {icon}
+                <span className="text-[10px] font-medium">{label}</span>
+                {active && <span className="absolute bottom-1.5 h-1 w-1 rounded-full bg-primary" />}
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
     </>
   )
 }
