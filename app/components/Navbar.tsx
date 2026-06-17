@@ -2,7 +2,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-const navItems = [
+type NavItem = { href: string; label: string; icon: React.ReactNode }
+
+const userNavItems: NavItem[] = [
   {
     href: '/home',
     label: 'Home',
@@ -56,8 +58,44 @@ const navItems = [
   },
 ]
 
-export default function Navbar() {
-  const pathname = usePathname()
+const adminNavItems: NavItem[] = [
+  {
+    href: '/home',
+    label: 'Home',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" suppressHydrationWarning>
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    ),
+  },
+  {
+    href: '/admin/dashboard',
+    label: 'Panel',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" suppressHydrationWarning>
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </svg>
+    ),
+  },
+  {
+    href: '/profile',
+    label: 'Profile',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" suppressHydrationWarning>
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    ),
+  },
+]
+
+export default function Navbar({ role }: { role: string }) {
+  const pathname  = usePathname()
+  const navItems  = role === 'admin' ? adminNavItems : userNavItems
 
   return (
     <>
@@ -82,10 +120,7 @@ export default function Navbar() {
               const active = pathname.startsWith(href)
               return (
                 <li key={href}>
-                  <Link
-                    href={href}
-                    className={active ? 'active font-medium' : 'font-medium'}
-                  >
+                  <Link href={href} className={active ? 'active font-medium' : 'font-medium'}>
                     {label}
                   </Link>
                 </li>
