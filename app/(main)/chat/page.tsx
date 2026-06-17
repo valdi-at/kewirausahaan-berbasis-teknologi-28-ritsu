@@ -60,7 +60,7 @@ export default async function ChatListPage() {
           <p className="text-xs mt-1">Chats appear once a driver is assigned to a booking.</p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2 stagger">
           {chats.map((chat) => {
             const isActive = chat.stage < 5
             const date = new Date(chat.created_at).toLocaleDateString('id-ID', {

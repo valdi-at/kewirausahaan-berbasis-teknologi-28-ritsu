@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import ScrollReveal from '@/app/components/ScrollReveal'
 
 export const metadata: Metadata = { title: 'Home - RITSU' }
 
@@ -75,30 +76,34 @@ export default function HomePage() {
       {/* ── Features ── */}
       <div className="bg-base-200 px-6 py-16">
         <div className="mx-auto max-w-2xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-2">
-            Everything you need, nothing you don&apos;t
-          </h2>
-          <p className="text-center text-base-content/50 mb-10">
-            Built specifically for the ITS campus community.
-          </p>
+          <ScrollReveal className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold mb-2">
+              Everything you need, nothing you don&apos;t
+            </h2>
+            <p className="text-base-content/50">
+              Built specifically for the ITS campus community.
+            </p>
+          </ScrollReveal>
           <div className="grid gap-4 md:grid-cols-3">
-            {features.map(({ icon, title, desc, colorClass }) => (
-              <div key={title} className="card bg-base-100 shadow-sm">
-                <div className="card-body gap-3">
-                  <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ${colorClass}`}>
-                    {icon}
-                  </span>
-                  <h3 className="card-title text-base">{title}</h3>
-                  <p className="text-sm text-base-content/60 leading-relaxed">{desc}</p>
+            {features.map(({ icon, title, desc, colorClass }, i) => (
+              <ScrollReveal key={title} delay={i * 110} className="flex">
+                <div className="card bg-base-100 shadow-sm flex-1">
+                  <div className="card-body gap-3">
+                    <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ${colorClass}`}>
+                      {icon}
+                    </span>
+                    <h3 className="card-title text-base">{title}</h3>
+                    <p className="text-sm text-base-content/60 leading-relaxed">{desc}</p>
+                  </div>
                 </div>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
       </div>
 
       {/* ── Stats ── */}
-      <div className="bg-base-100 flex justify-center px-4 py-6 border-b border-base-200">
+      <ScrollReveal className="bg-base-100 flex justify-center px-4 py-6 border-b border-base-200">
         <div className="stats stats-horizontal shadow-sm w-full max-w-2xl">
           <div className="stat place-items-center">
             <div className="stat-value text-primary text-2xl">50+</div>
@@ -113,33 +118,37 @@ export default function HomePage() {
             <div className="stat-desc">Avg. Pickup</div>
           </div>
         </div>
-      </div>
+      </ScrollReveal>
 
       {/* ── How it works ── */}
       <div className="bg-base-200 px-6 py-16">
         <div className="mx-auto max-w-2xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
-            How it works
-          </h2>
-          <ul className="steps steps-vertical w-full">
-            {[
-              { title: 'Set your destination', desc: 'Pick a starting point and where you want to go anywhere on campus.' },
-              { title: 'Match with a driver', desc: 'A nearby campus driver sees your request and confirms the pickup.' },
-              { title: 'Ride safely', desc: 'Track your driver live and arrive right on time.' },
-            ].map(({ title, desc }) => (
-              <li key={title} className="step step-primary">
-                <div className="text-left pl-2">
-                  <div className="font-semibold">{title}</div>
-                  <div className="text-sm text-base-content/50 mt-0.5">{desc}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <ScrollReveal>
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
+              How it works
+            </h2>
+          </ScrollReveal>
+          <ScrollReveal delay={100}>
+            <ul className="steps steps-vertical w-full">
+              {[
+                { title: 'Set your destination', desc: 'Pick a starting point and where you want to go anywhere on campus.' },
+                { title: 'Match with a driver', desc: 'A nearby campus driver sees your request and confirms the pickup.' },
+                { title: 'Ride safely', desc: 'Track your driver live and arrive right on time.' },
+              ].map(({ title, desc }) => (
+                <li key={title} className="step step-primary">
+                  <div className="text-left pl-2">
+                    <div className="font-semibold">{title}</div>
+                    <div className="text-sm text-base-content/50 mt-0.5">{desc}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </ScrollReveal>
         </div>
       </div>
 
       {/* ── CTA banner ── */}
-      <div className="bg-gradient-to-r from-secondary/40 to-primary/20 px-6 py-14">
+      <ScrollReveal className="bg-gradient-to-r from-secondary/40 to-primary/20 px-6 py-14">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-2xl font-bold mb-3">Ready to ride?</h2>
           <p className="text-base-content/60 mb-6">
@@ -149,7 +158,7 @@ export default function HomePage() {
             Get Started
           </Link>
         </div>
-      </div>
+      </ScrollReveal>
 
     </div>
   )

@@ -83,7 +83,9 @@ export default async function DriverBookingsPage() {
             </div>
           </div>
         ) : (
-          available.map(b => <AvailableBookingCard key={b.id} booking={b} />)
+          <div className="stagger flex flex-col gap-3">
+            {available.map(b => <AvailableBookingCard key={b.id} booking={b} />)}
+          </div>
         )}
       </section>
 

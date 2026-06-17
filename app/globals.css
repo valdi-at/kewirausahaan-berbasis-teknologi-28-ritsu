@@ -1,6 +1,84 @@
 @import "tailwindcss";
 @import "daisyui/daisyui.css";
 
+/* ── Animations ──────────────────────────────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable; /* reserves scrollbar space even when not scrollable — prevents layout shift on navigation */
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-from-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Page-level entrance — applied by PageTransition on every route change */
+.page-enter {
+  animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Staggered children — add .stagger to any list/grid wrapper */
+.stagger > * {
+  animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger > *:nth-child(1)   { animation-delay:   0ms; }
+.stagger > *:nth-child(2)   { animation-delay:  60ms; }
+.stagger > *:nth-child(3)   { animation-delay: 120ms; }
+.stagger > *:nth-child(4)   { animation-delay: 180ms; }
+.stagger > *:nth-child(5)   { animation-delay: 240ms; }
+.stagger > *:nth-child(6)   { animation-delay: 300ms; }
+.stagger > *:nth-child(7)   { animation-delay: 360ms; }
+.stagger > *:nth-child(n+8) { animation-delay: 420ms; }
+
+/* Scroll-triggered reveal */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: none; /* none avoids a permanent stacking context */
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll { opacity: 1; transform: none; transition: none; }
+}
+
+/* Card hover lift on anchor/button cards */
+a.card, button.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+a.card:hover, button.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px -12px oklch(18% 0.01 200 / 0.14);
+}
+
+/* Button press feedback */
+.btn:not(:disabled):active {
+  transform: scale(0.95);
+  transition-duration: 60ms !important;
+}
+
+/* Smooth interactive transitions */
+.btn       { transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; }
+.badge     { transition: background-color 0.15s ease, color 0.15s ease; }
+.input, .textarea, .select { transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+
 /* ── RITSU theme ─────────────────────────────────────────────────────────── */
 /* Unlayered :root overrides DaisyUI's @layer base defaults                  */
 :root {

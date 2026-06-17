@@ -71,7 +71,7 @@ export default async function BookingHistoryPage() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 stagger">
           {bookings.map(b => {
             const from = locationName(b.pickup_location)
             const to   = locationName(b.destination)
