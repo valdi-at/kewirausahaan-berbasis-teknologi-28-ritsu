@@ -19,19 +19,29 @@ const roleBadge: Record<string, string> = {
 export default function UserTable({ users }: { users: User[] }) {
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+  const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
 
-  function handleRoleChange(userId: string, newRole: string) {
-    setPendingId(userId)
+  function handleRoleChange(select: HTMLSelectElement, user: User) {
+    const newRole = select.value
+    setPendingId(user.id)
+    setError('')
     startTransition(async () => {
-      await updateUserRole(userId, newRole)
+      const result = await updateUserRole(user.id, newRole)
+      if (result.error) {
+        // The change was not saved, so put the dropdown back.
+        select.value = user.role
+        setError(result.error)
+      }
       setPendingId(null)
     })
   }
 
   function handleDelete(userId: string) {
+    setError('')
     startTransition(async () => {
-      await deleteUser(userId)
+      const result = await deleteUser(userId)
+      if (result.error) setError(result.error)
       setDeleteTargetId(null)
     })
   }
@@ -40,6 +50,12 @@ export default function UserTable({ users }: { users: User[] }) {
 
   return (
     <>
+      {error && (
+        <div role="alert" className="alert alert-error alert-soft mb-4">
+          <span>{error}</span>
+        </div>
+      )}
+
       <div className="card bg-base-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="table table-sm">
@@ -76,7 +92,7 @@ export default function UserTable({ users }: { users: User[] }) {
                       className="select select-xs select-bordered"
                       defaultValue={user.role}
                       disabled={pendingId === user.id || isPending}
-                      onChange={e => handleRoleChange(user.id, e.target.value)}
+                      onChange={e => handleRoleChange(e.currentTarget, user)}
                     >
                       <option value="customer">customer</option>
                       <option value="driver">driver</option>

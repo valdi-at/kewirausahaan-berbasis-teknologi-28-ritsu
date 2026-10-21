@@ -1,4 +1,7 @@
 services:
+  postgres:
+    ports: !reset []
+
   app:
     image: ghcr.io/valdi-at/kewirausahaan-berbasis-teknologi-28-ritsu:master
     ports: !reset []
