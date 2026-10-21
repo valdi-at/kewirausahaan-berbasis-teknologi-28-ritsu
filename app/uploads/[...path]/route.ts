@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import path from 'path'
 import fs from 'fs/promises'
+import { getOptionalUser } from '@/app/lib/dal'
+import { db } from '@/app/lib/db'
+import { contentTypeFor, resolveUploadPath, uploadUrlPath } from '@/app/lib/uploads'
 
-const CONTENT_TYPES: Record<string, string> = {
-  '.png':  'image/png',
-  '.jpg':  'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.gif':  'image/gif',
-  '.heic': 'image/heic',
-  '.mp4':  'video/mp4',
-  '.webm': 'video/webm',
-  '.mov':  'video/quicktime',
-  '.mp3':  'audio/mpeg',
-  '.m4a':  'audio/mp4',
-  '.ogg':  'audio/ogg',
-  '.oga':  'audio/ogg',
-  '.wav':  'audio/wav',
-  '.weba': 'audio/webm',
+// License images are only for admins and the applicant who uploaded them.
+async function licenseAccessStatus(urlPath: string): Promise<401 | 403 | null> {
+  const user = await getOptionalUser()
+  if (!user) return 401
+  if (user.role === 'admin') return null
+
+  const owned = await db.query(
+    'SELECT 1 FROM driver_applications WHERE user_id = $1 AND driving_license_image = $2 LIMIT 1',
+    [user.id, urlPath]
+  )
+  return (owned.rowCount ?? 0) > 0 ? null : 403
 }
 
 export async function GET(
@@ -25,19 +22,26 @@ export async function GET(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path: segments } = await params
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
-  const filePath = path.resolve(uploadsDir, ...segments)
+  const filePath = resolveUploadPath(segments)
 
-  if (!filePath.startsWith(uploadsDir + path.sep) && filePath !== uploadsDir) {
+  if (!filePath) {
     return new NextResponse(null, { status: 403 })
+  }
+
+  // Check the resolved path, so chat/../licenses/x can't skip the guard.
+  const urlPath = uploadUrlPath(filePath)
+  const isLicense = urlPath.split('/')[2] === 'licenses'
+  if (isLicense) {
+    const status = await licenseAccessStatus(urlPath)
+    if (status) return new NextResponse(null, { status })
   }
 
   try {
     const file = await fs.readFile(filePath)
-    const ext = path.extname(filePath).toLowerCase()
-    const contentType = CONTENT_TYPES[ext] ?? 'application/octet-stream'
     return new NextResponse(file, {
-      headers: { 'Content-Type': contentType },
+      headers: isLicense
+        ? { 'Content-Type': contentTypeFor(filePath), 'Cache-Control': 'private, no-store' }
+        : { 'Content-Type': contentTypeFor(filePath) },
     })
   } catch {
     return new NextResponse(null, { status: 404 })

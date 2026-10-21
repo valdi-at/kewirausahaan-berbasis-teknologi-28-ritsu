@@ -16,7 +16,7 @@ export type FinanceData = {
   avgPerBooking: number
   monthlyTrend: { month: string; revenue: number; count: number }[]
   paymentBreakdown: { name: string; revenue: number; count: number }[]
-  recentBookings: { id: string; price: number; created_at: string; payment_method: string }[]
+  recentBookings: { id: string; price: number; created_at: string; payment_method: string | null }[]
 }
 
 export type Assumptions = {
@@ -102,6 +102,8 @@ export default function FinanceClient({ data }: { data: FinanceData }) {
       const stored = localStorage.getItem(LS_KEY)
       if (stored) {
         const parsed = { ...DEFAULTS, ...JSON.parse(stored) }
+        // localStorage only exists after hydration, so this has to happen in an effect
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAsumsi(parsed)
         setDraft(parsed)
       }

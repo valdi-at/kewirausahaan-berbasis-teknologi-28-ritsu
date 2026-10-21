@@ -26,10 +26,12 @@ export default function ApplicationList({ applications }: { applications: Applic
   const [rejectTarget, setRejectTarget] = useState<Application | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [rejectError, setRejectError] = useState('')
+  const [acceptError, setAcceptError] = useState('')
   const [isPending, startTransition] = useTransition()
 
   function openAccept(app: Application) {
     setAcceptTarget(app)
+    setAcceptError('')
   }
 
   function openReject(app: Application) {
@@ -41,7 +43,11 @@ export default function ApplicationList({ applications }: { applications: Applic
   function handleAccept() {
     if (!acceptTarget) return
     startTransition(async () => {
-      await acceptApplication(acceptTarget.id)
+      const result = await acceptApplication(acceptTarget.id)
+      if (result.error) {
+        setAcceptError(result.error)
+        return
+      }
       setAcceptTarget(null)
     })
   }
@@ -53,7 +59,11 @@ export default function ApplicationList({ applications }: { applications: Applic
       return
     }
     startTransition(async () => {
-      await rejectApplication(rejectTarget.id, rejectReason)
+      const result = await rejectApplication(rejectTarget.id, rejectReason)
+      if (result.error) {
+        setRejectError(result.error)
+        return
+      }
       setRejectTarget(null)
     })
   }
@@ -149,6 +159,7 @@ export default function ApplicationList({ applications }: { applications: Applic
             <span className="font-semibold text-base-content">{acceptTarget?.username}</span>&apos;s
             driver application? They will be granted driver access immediately.
           </p>
+          {acceptError && <p className="text-sm text-error">{acceptError}</p>}
           <div className="modal-action">
             <button
               className="btn btn-ghost"
